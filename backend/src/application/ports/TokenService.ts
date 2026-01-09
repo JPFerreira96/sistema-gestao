@@ -1,6 +1,7 @@
 export type TokenPayload = {
   userId: string;
   permissionLevel: string;
+  mfaVerified?: boolean;
 };
 
 export interface TokenService {

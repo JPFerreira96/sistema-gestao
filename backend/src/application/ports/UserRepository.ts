@@ -25,6 +25,7 @@ export interface UserRepository {
   create(input: CreateUserInput): Promise<User>;
   list(): Promise<User[]>;
   findById(id: string): Promise<User | null>;
+  findByIds(ids: string[]): Promise<User[]>;
   update(id: string, input: UpdateUserInput): Promise<User>;
   delete(id: string): Promise<void>;
   recordLoginFailure(userId: string, attempts: number, lockoutUntil: Date | null): Promise<void>;

@@ -41,7 +41,8 @@ export class RefreshSessionUseCase {
 
     const accessToken = this.tokenService.sign({
       userId: user.id,
-      permissionLevel: user.permissionLevel
+      permissionLevel: user.permissionLevel,
+      mfaVerified: true
     });
 
     return {

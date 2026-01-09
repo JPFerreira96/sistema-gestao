@@ -8,6 +8,9 @@ import { SetupMfaUseCase } from "../../../application/usecases/SetupMfaUseCase";
 import { VerifyMfaUseCase } from "../../../application/usecases/VerifyMfaUseCase";
 import { LogoutUseCase } from "../../../application/usecases/LogoutUseCase";
 import { UserMfaRepository } from "../../../application/ports/UserMfaRepository";
+import { RefreshTokenRepository } from "../../../application/ports/RefreshTokenRepository";
+import { RefreshTokenService } from "../../../application/ports/RefreshTokenService";
+import { TokenService } from "../../../application/ports/TokenService";
 import { env } from "../../../shared/config/env";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import {
@@ -41,7 +44,10 @@ export class AuthController {
     private setupMfaUseCase: SetupMfaUseCase,
     private verifyMfaUseCase: VerifyMfaUseCase,
     private disableMfaUseCase: DisableMfaUseCase,
-    private userMfaRepository: UserMfaRepository
+    private userMfaRepository: UserMfaRepository,
+    private tokenService: TokenService,
+    private refreshTokenService: RefreshTokenService,
+    private refreshTokenRepository: RefreshTokenRepository
   ) {}
 
   login = async (req: Request, res: Response) => {
@@ -49,19 +55,33 @@ export class AuthController {
     const result = await this.loginUseCase.execute(payload);
 
     const csrfToken = createCsrfToken();
-    res.cookie(ACCESS_COOKIE, result.accessToken, buildCookieOptions(true, env.jwt.accessTokenMs));
-    res.cookie(
-      REFRESH_COOKIE,
-      result.refreshToken,
-      buildCookieOptions(true, env.security.refreshTokenDays * 24 * 60 * 60 * 1000)
-    );
+    if (result.accessToken) {
+      res.cookie(ACCESS_COOKIE, result.accessToken, buildCookieOptions(true, env.jwt.accessTokenMs));
+    }
+    if (!result.mfaRequired && result.refreshToken) {
+      res.cookie(
+        REFRESH_COOKIE,
+        result.refreshToken,
+        buildCookieOptions(true, env.security.refreshTokenDays * 24 * 60 * 60 * 1000)
+      );
+    }
     res.cookie(CSRF_COOKIE, csrfToken, buildCookieOptions(false, env.jwt.accessTokenMs));
+
+    if (result.mfaRequired) {
+      return res.json({
+        userId: result.userId,
+        permissionLevel: result.permissionLevel,
+        mfaEnabled: result.mfaEnabled,
+        mfaRequired: true
+      });
+    }
 
     return res.json({
       userId: result.userId,
       permissionLevel: result.permissionLevel,
       csrfToken,
-      mfaEnabled: result.mfaEnabled
+      mfaEnabled: result.mfaEnabled,
+      mfaRequired: false
     });
   };
 
@@ -87,7 +107,8 @@ export class AuthController {
       userId: result.userId,
       permissionLevel: result.permissionLevel,
       csrfToken,
-      mfaEnabled: mfa?.enabled ?? false
+      mfaEnabled: mfa?.enabled ?? false,
+      mfaVerified: true
     });
   };
 
@@ -112,7 +133,8 @@ export class AuthController {
     return res.json({
       userId: req.auth.userId,
       permissionLevel: req.auth.permissionLevel,
-      mfaEnabled: mfa?.enabled ?? false
+      mfaEnabled: mfa?.enabled ?? false,
+      mfaVerified: req.auth.mfaVerified ?? true
     });
   };
 
@@ -138,7 +160,31 @@ export class AuthController {
       return res.status(401).json({ error: "Unauthorized." });
     }
     await this.verifyMfaUseCase.execute(req.auth.userId, payload.token);
-    return res.status(204).send();
+    const accessToken = this.tokenService.sign({
+      userId: req.auth.userId,
+      permissionLevel: req.auth.permissionLevel,
+      mfaVerified: true
+    });
+    const refreshToken = this.refreshTokenService.generate();
+    const refreshTokenHash = this.refreshTokenService.hash(refreshToken);
+    const expiresAt = this.refreshTokenService.buildExpirationDate();
+    await this.refreshTokenRepository.create(req.auth.userId, refreshTokenHash, expiresAt);
+
+    const csrfToken = createCsrfToken();
+    res.cookie(ACCESS_COOKIE, accessToken, buildCookieOptions(true, env.jwt.accessTokenMs));
+    res.cookie(
+      REFRESH_COOKIE,
+      refreshToken,
+      buildCookieOptions(true, env.security.refreshTokenDays * 24 * 60 * 60 * 1000)
+    );
+    res.cookie(CSRF_COOKIE, csrfToken, buildCookieOptions(false, env.jwt.accessTokenMs));
+
+    return res.json({
+      userId: req.auth.userId,
+      permissionLevel: req.auth.permissionLevel,
+      csrfToken,
+      mfaEnabled: true
+    });
   };
 
   disableMfa = async (req: AuthRequest, res: Response) => {

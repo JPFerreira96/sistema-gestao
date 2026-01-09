@@ -54,7 +54,10 @@ export const buildAuthModule = () => {
     setupMfa,
     verifyMfa,
     disableMfa,
-    container.userMfaRepository
+    container.userMfaRepository,
+    container.tokenService,
+    container.refreshTokenService,
+    container.refreshTokenRepository
   );
 
   return buildAuthRoutes(controller, container.tokenService, container.auditLogRepository);

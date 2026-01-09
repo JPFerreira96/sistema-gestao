@@ -1,6 +1,10 @@
 import { MySqlUserRepository } from "../../infrastructure/db/mysql/MySqlUserRepository";
 import { MySqlCredentialRepository } from "../../infrastructure/db/mysql/MySqlCredentialRepository";
 import { MySqlEventRepository } from "../../infrastructure/db/mysql/MySqlEventRepository";
+import { MySqlEventAssignmentRepository } from "../../infrastructure/db/mysql/MySqlEventAssignmentRepository";
+import { MySqlEventAttendanceRepository } from "../../infrastructure/db/mysql/MySqlEventAttendanceRepository";
+import { MySqlEventObservationRepository } from "../../infrastructure/db/mysql/MySqlEventObservationRepository";
+import { MySqlReportRepository } from "../../infrastructure/db/mysql/MySqlReportRepository";
 import { MySqlRefreshTokenRepository } from "../../infrastructure/db/mysql/MySqlRefreshTokenRepository";
 import { MySqlAuditLogRepository } from "../../infrastructure/db/mysql/MySqlAuditLogRepository";
 import { MySqlUserMfaRepository } from "../../infrastructure/db/mysql/MySqlUserMfaRepository";
@@ -14,6 +18,10 @@ export const container = {
   userRepository: new MySqlUserRepository(),
   credentialRepository: new MySqlCredentialRepository(),
   eventRepository: new MySqlEventRepository(),
+  eventAssignmentRepository: new MySqlEventAssignmentRepository(),
+  eventAttendanceRepository: new MySqlEventAttendanceRepository(),
+  eventObservationRepository: new MySqlEventObservationRepository(),
+  reportRepository: new MySqlReportRepository(),
   refreshTokenRepository: new MySqlRefreshTokenRepository(),
   auditLogRepository: new MySqlAuditLogRepository(),
   userMfaRepository: new MySqlUserMfaRepository(),

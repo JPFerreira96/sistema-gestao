@@ -6,6 +6,7 @@ export type AuthRequest = Request & {
   auth?: {
     userId: string;
     permissionLevel: string;
+    mfaVerified?: boolean;
   };
 };
 
@@ -28,9 +29,25 @@ export const requireAuth = (tokenService: TokenService) => {
 
     try {
       const payload = tokenService.verify(token);
-      req.auth = { userId: payload.userId, permissionLevel: payload.permissionLevel };
+      const mfaVerified = payload.mfaVerified ?? true;
+      req.auth = {
+        userId: payload.userId,
+        permissionLevel: payload.permissionLevel,
+        mfaVerified
+      };
+
+      if (mfaVerified === false) {
+        const isAuthRoute = req.baseUrl === "/api/auth";
+        const allowedPaths = new Set(["/mfa/setup", "/mfa/verify", "/me", "/logout"]);
+        if (!isAuthRoute || !allowedPaths.has(req.path)) {
+          throw new AppError("MFA required.", 401);
+        }
+      }
       next();
     } catch (err) {
+      if (err instanceof AppError) {
+        throw err;
+      }
       throw new AppError("Invalid token.", 401);
     }
   };

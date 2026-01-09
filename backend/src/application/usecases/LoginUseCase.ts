@@ -15,11 +15,12 @@ export type LoginInput = {
 };
 
 export type LoginOutput = {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?: string;
+  refreshToken?: string;
   userId: string;
   permissionLevel: string;
   mfaEnabled: boolean;
+  mfaRequired: boolean;
 };
 
 export class LoginUseCase {
@@ -67,7 +68,21 @@ export class LoginUseCase {
     const mfaEnabled = mfa?.enabled ?? false;
     if (mfaEnabled) {
       if (!input.mfaCode) {
-        throw new AppError("MFA required.", 401);
+        const accessToken = this.tokenService.sign({
+          userId: user.id,
+          permissionLevel: user.permissionLevel,
+          mfaVerified: false
+        });
+        return {
+          accessToken,
+          userId: user.id,
+          permissionLevel: user.permissionLevel,
+          mfaEnabled,
+          mfaRequired: true
+        };
+      }
+      if (!mfa?.secretBase32) {
+        throw new AppError("MFA not configured.", 400);
       }
       const ok = this.mfaService.verify(mfa.secretBase32, input.mfaCode);
       if (!ok) {
@@ -85,7 +100,8 @@ export class LoginUseCase {
 
     const accessToken = this.tokenService.sign({
       userId: user.id,
-      permissionLevel: user.permissionLevel
+      permissionLevel: user.permissionLevel,
+      mfaVerified: true
     });
 
     const refreshToken = this.refreshTokenService.generate();
@@ -98,7 +114,8 @@ export class LoginUseCase {
       refreshToken,
       userId: user.id,
       permissionLevel: user.permissionLevel,
-      mfaEnabled
+      mfaEnabled,
+      mfaRequired: false
     };
   }
 }

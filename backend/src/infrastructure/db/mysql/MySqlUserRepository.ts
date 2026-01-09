@@ -101,6 +101,18 @@ export class MySqlUserRepository implements UserRepository {
     return mapUser(rows[0]);
   }
 
+  async findByIds(ids: string[]): Promise<User[]> {
+    if (!ids.length) {
+      return [];
+    }
+    const placeholders = ids.map(() => "?").join(", ");
+    const rows = await query<any[]>(
+      `SELECT * FROM users WHERE id IN (${placeholders})`,
+      ids
+    );
+    return rows.map(mapUser);
+  }
+
   async update(id: string, input: UpdateUserInput): Promise<User> {
     const fields: string[] = [];
     const values: Array<string | number | boolean | null | Date> = [];

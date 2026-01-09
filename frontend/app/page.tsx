@@ -8,9 +8,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [needsMfa, setNeedsMfa] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -19,24 +17,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (needsMfa && !mfaCode.trim()) {
-        setError("Informe o codigo MFA.");
-        setLoading(false);
+      const result = await login(email, password);
+      if (result.mfaRequired) {
+        router.push("/mfa");
         return;
       }
-
-      const result = await login(email, password, needsMfa ? mfaCode : undefined);
       if (result.mfaEnabled === false) {
         router.push("/mfa");
         return;
       }
       router.push("/dashboard");
     } catch (err) {
-      if (err instanceof Error && err.message === "MFA required.") {
-        setNeedsMfa(true);
-        setError("Informe o codigo MFA.");
-        return;
-      }
       setError("Email ou senha invalidos.");
     } finally {
       setLoading(false);
@@ -80,19 +71,6 @@ export default function LoginPage() {
               required
             />
           </div>
-          {needsMfa ? (
-            <div>
-              <label htmlFor="mfaCode">Codigo MFA</label>
-              <input
-                id="mfaCode"
-                type="text"
-                value={mfaCode}
-                onChange={(e) => setMfaCode(e.target.value)}
-                placeholder="123456"
-                required
-              />
-            </div>
-          ) : null}
           {error ? <p className="login-hint">{error}</p> : null}
           <button type="submit" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}

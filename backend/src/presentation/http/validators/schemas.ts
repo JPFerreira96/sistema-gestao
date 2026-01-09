@@ -57,6 +57,30 @@ export const eventQuerySchema = z.object({
   end: dateString.optional()
 });
 
+export const assignmentSchema = z.object({
+  userIds: z.array(z.string().uuid())
+});
+
+export const attendanceItemSchema = z.object({
+  userId: z.string().uuid(),
+  present: z.boolean(),
+  note: z.string().max(500).optional().nullable()
+});
+
+export const attendanceSchema = z.object({
+  items: z.array(attendanceItemSchema)
+});
+
+export const observationSchema = z.object({
+  note: z.string().min(1).max(1000)
+});
+
+export const reportQuerySchema = z.object({
+  start: dateString,
+  end: dateString,
+  eventId: z.string().uuid().optional()
+});
+
 export const mfaVerifySchema = z.object({
   token: z.string().min(6).max(8)
 });

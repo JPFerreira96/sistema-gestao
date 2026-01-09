@@ -33,10 +33,17 @@
 - POST /api/events
 - PUT /api/events/:id
 - DELETE /api/events/:id
+- POST /api/events/:eventId/assignments
+- GET /api/events/:eventId/attendance
+- POST /api/events/:eventId/attendance
+- POST /api/events/:eventId/observations
+- POST /api/events/:eventId/observations/:operatorId
+- GET /api/reports/events-attendance
 
 ## Observacoes
 - A criacao de credenciais exige token com permissao ADMIN/COMANDO/ALTO-COMANDO.
 - Endpoints de usuarios exigem autenticacao.
 - Endpoints de eventos exigem autenticacao; criacao/edicao requer ADMIN/COMANDO/ALTO-COMANDO.
+- Endpoints de presenca e relatorios exigem ADMIN/COMANDO/ALTO-COMANDO.
 - Autenticacao usa cookies httpOnly + CSRF.
 - Requisicoes POST/PUT/DELETE exigem header `x-csrf-token` igual ao cookie `csrf_token`.

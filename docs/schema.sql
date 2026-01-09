@@ -40,6 +40,55 @@ CREATE TABLE IF NOT EXISTS events (
   CONSTRAINT fk_events_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS event_assignments (
+  id CHAR(36) PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  user_id CHAR(36) NOT NULL,
+  assigned_by CHAR(36) NOT NULL,
+  assigned_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  CONSTRAINT fk_assign_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT fk_assign_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_assign_by FOREIGN KEY (assigned_by) REFERENCES users(id),
+  UNIQUE KEY uq_event_user (event_id, user_id),
+  INDEX idx_assign_event (event_id),
+  INDEX idx_assign_user (user_id)
+);
+
+CREATE TABLE IF NOT EXISTS event_attendance (
+  id CHAR(36) PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  user_id CHAR(36) NOT NULL,
+  present TINYINT(1) NOT NULL DEFAULT 0,
+  marked_by CHAR(36) NOT NULL,
+  marked_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  CONSTRAINT fk_att_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT fk_att_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_att_by FOREIGN KEY (marked_by) REFERENCES users(id),
+  UNIQUE KEY uq_att_event_user (event_id, user_id),
+  INDEX idx_att_event (event_id),
+  INDEX idx_att_user (user_id)
+);
+
+CREATE TABLE IF NOT EXISTS event_observations (
+  id CHAR(36) PRIMARY KEY,
+  event_id CHAR(36) NOT NULL,
+  operator_id CHAR(36) NULL,
+  note TEXT NOT NULL,
+  created_by CHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  CONSTRAINT fk_obs_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT fk_obs_operator FOREIGN KEY (operator_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_obs_by FOREIGN KEY (created_by) REFERENCES users(id),
+  UNIQUE KEY uq_obs_event_operator (event_id, operator_id),
+  INDEX idx_obs_event (event_id),
+  INDEX idx_obs_operator (operator_id)
+);
+
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id CHAR(36) PRIMARY KEY,
   user_id CHAR(36) NOT NULL,

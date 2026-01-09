@@ -8,6 +8,8 @@ import { errorHandler } from "../presentation/http/middlewares/errorHandler";
 import { buildUserModule } from "./assemblies/userAssembly";
 import { buildAuthModule } from "./assemblies/authAssembly";
 import { buildEventModule } from "./assemblies/eventAssembly";
+import { buildEventAttendanceModule } from "./assemblies/eventAttendanceAssembly";
+import { buildReportModule } from "./assemblies/reportAssembly";
 
 const app = express();
 
@@ -48,6 +50,8 @@ app.get("/health", (_req, res) => {
 app.use("/api/auth", buildAuthModule());
 app.use("/api/users", buildUserModule());
 app.use("/api/events", buildEventModule());
+app.use("/api/events", buildEventAttendanceModule());
+app.use("/api/reports", buildReportModule());
 
 app.use(errorHandler);
 

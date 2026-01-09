@@ -14,6 +14,7 @@ export default function MfaSetupPage() {
   const [secret, setSecret] = useState<string | null>(null);
   const [otpauthUrl, setOtpauthUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [mode, setMode] = useState<"setup" | "verify" | null>(null);
   const [digits, setDigits] = useState<string[]>(buildEmptyDigits);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,9 +31,14 @@ export default function MfaSetupPage() {
           return null;
         }
         if (session.mfaEnabled) {
-          router.push("/dashboard");
+          if (session.mfaVerified !== false) {
+            router.push("/dashboard");
+            return null;
+          }
+          setMode("verify");
           return null;
         }
+        setMode("setup");
         return setupMfa();
       })
       .then((data) => {
@@ -163,16 +169,17 @@ export default function MfaSetupPage() {
       <section className="mfa-card">
         <div>
           <span className="tagline">VERIFICACAO 2FA</span>
-          <h1 className="mfa-title">Ativar MFA</h1>
+          <h1 className="mfa-title">{mode === "verify" ? "Verificacao 2FA" : "Ativar MFA"}</h1>
           <p className="mfa-subtitle">
-            Escaneie o QR Code no autenticador, copie o codigo manual se precisar e confirme
-            os 6 digitos abaixo.
+            {mode === "verify"
+              ? "Digite os 6 digitos do seu autenticador para continuar."
+              : "Escaneie o QR Code no autenticador, copie o codigo manual se precisar e confirme os 6 digitos abaixo."}
           </p>
         </div>
 
         {loading ? (
           <p className="mfa-subtitle">Carregando configuracao...</p>
-        ) : (
+        ) : mode === "setup" ? (
           <>
             <div className="mfa-qr">
               {qrDataUrl ? (
@@ -190,7 +197,7 @@ export default function MfaSetupPage() {
               </button>
             </div>
           </>
-        )}
+        ) : null}
 
         <form onSubmit={handleSubmit}>
           <div className="mfa-boxes" onPaste={handlePaste}>

@@ -7,12 +7,14 @@ export type LoginResponse = {
   permissionLevel: string;
   csrfToken?: string;
   mfaEnabled?: boolean;
+  mfaRequired?: boolean;
 };
 
 export type SessionResponse = {
   userId: string;
   permissionLevel: string;
   mfaEnabled: boolean;
+  mfaVerified?: boolean;
 };
 
 export type EventItem = {
@@ -93,7 +95,9 @@ export async function login(email: string, password: string, mfaCode?: string): 
   }
 
   const data = (await response.json()) as LoginResponse;
-  setPermission(data.permissionLevel);
+  if (!data.mfaRequired) {
+    setPermission(data.permissionLevel);
+  }
   return data;
 }
 
@@ -108,7 +112,9 @@ export async function fetchSession(): Promise<SessionResponse> {
     throw new Error("Falha ao carregar sessao.");
   }
   const data = (await response.json()) as SessionResponse;
-  setPermission(data.permissionLevel);
+  if (data.mfaVerified !== false) {
+    setPermission(data.permissionLevel);
+  }
   return data;
 }
 
